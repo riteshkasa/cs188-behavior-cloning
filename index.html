@@ -17,6 +17,12 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="background-video-shell" aria-hidden="true">
+      <video class="background-video" autoplay muted loop playsinline preload="auto">
+        <source src="images/demo_188.mp4" type="video/mp4" />
+      </video>
+    </div>
+
     <div class="page-shell">
       <header class="hero">
         <nav class="topbar">
@@ -189,45 +195,67 @@
 
         <section id="state-explorer" class="section">
           <div class="section-heading">
-            <p class="section-kicker">Interactive State Explorer</p>
-            <h2>See how the representation changes when the robot gains object awareness.</h2>
+            <p class="section-kicker">State Explorer</p>
+            <h2>What the 44-dimensional state vector represents</h2>
           </div>
 
-          <div class="explorer-grid">
-            <article class="card comparison-card">
-              <div class="toggle-group" role="tablist" aria-label="State representation comparison">
-                <button class="toggle active" data-mode="robot-only" role="tab" aria-selected="true">Robot-only</button>
-                <button class="toggle" data-mode="object-aware" role="tab" aria-selected="false">Object-aware</button>
+          <div class="state-overview">
+            <article class="card state-summary-card">
+              <div class="vector-detail-topline">
+                <div>
+                  <p class="mono-label">44D Layout</p>
+                  <h3>Three bundles organize the policy input.</h3>
+                </div>
+                <span class="vector-dims-pill">16 + 14 + 14 = 44</span>
               </div>
-
-              <div class="mode-panel active" id="robot-only-panel">
-                <h3>Robot-only state</h3>
-                <p>
-                  Contains internal robot information like joint positions, velocities, and
-                  controller state, but lacks explicit knowledge of the cabinet geometry.
-                </p>
-                <ul class="feature-list">
-                  <li>Good for tracking the arm itself</li>
-                  <li>Weak on target localization</li>
-                  <li>Must infer handle position indirectly</li>
-                </ul>
+              <div class="state-bundle-row">
+                <div class="state-bundle bundle-proprio">
+                  <span>16 dims</span>
+                  <strong>Proprioception</strong>
+                  <p>Robot pose, orientation, and gripper state.</p>
+                </div>
+                <div class="state-bundle bundle-door">
+                  <span>14 dims</span>
+                  <strong>Door geometry</strong>
+                  <p>Cabinet-door pose and door-to-end-effector relationships.</p>
+                </div>
+                <div class="state-bundle bundle-handle">
+                  <span>14 dims</span>
+                  <strong>Handle geometry</strong>
+                  <p>Handle pose and handle-to-end-effector relationships.</p>
+                </div>
               </div>
-
-              <div class="mode-panel" id="object-aware-panel">
-                <h3>Object-aware state</h3>
+              <div class="state-summary-detail">
+                <p class="mono-label">Why This Structure Helps</p>
                 <p>
-                  Adds geometric task cues such as handle location and robot-to-handle distance,
-                  giving the policy direct access to the spatial facts that matter for cabinet opening.
+                  The final representation keeps core robot proprioception while adding explicit door and handle geometry. That combination lets the policy reason about both its own pose and the target object it needs to manipulate.
                 </p>
-                <ul class="feature-list">
-                  <li>Includes explicit target geometry</li>
-                  <li>Improves task-relevant grounding</li>
-                  <li>Forms a 44-dimensional state vector</li>
-                </ul>
+                <div class="vector-detail-grid">
+                  <div>
+                    <p class="detail-label">What it encodes</p>
+                    <p>
+                      The state mixes absolute object pose, relative pose, and end-effector configuration. In practice that means the model knows where the robot is, where the cabinet is, where the handle is, and how those frames relate to each other.
+                    </p>
+                  </div>
+                  <div>
+                    <p class="detail-label">Why it matters</p>
+                    <p>
+                      Cabinet opening is geometry-sensitive. A policy that sees target position and alignment directly can reach, orient, and pull more reliably than one forced to infer that structure from robot-only state.
+                    </p>
+                  </div>
+                </div>
+                <!-- <div class="vector-dim-list">
+                  <p class="detail-label">Design takeaway</p>
+                  <div class="vector-dim-tags">
+                    <span class="vector-dim-tag">proprio keeps control grounded</span>
+                    <span class="vector-dim-tag">door features provide object context</span>
+                    <span class="vector-dim-tag">handle features expose the true target</span>
+                  </div>
+                </div> -->
               </div>
             </article>
 
-            <article class="card slider-card">
+            <!-- <article class="card slider-card">
               <div class="slider-copy">
                 <p class="mono-label">Handle Alignment</p>
                 <h3>Distance to handle</h3>
@@ -250,7 +278,7 @@
                 <div class="handle"></div>
                 <div class="robot-arm" id="robot-arm"></div>
               </div>
-            </article>
+            </article> -->
           </div>
 
           <article class="card state-image-card">
@@ -268,6 +296,79 @@
               class="state-image"
             />
           </article>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <p class="section-kicker">Policy Network</p>
+            <h2>A transformer turns a 16-step history of 44D states into a 12D action.</h2>
+          </div>
+
+          <div class="transformer-layout">
+            <article class="card transformer-flow-card">
+              <div class="vector-map-header">
+                <div>
+                  <p class="mono-label">Architecture Flow</p>
+                  <h3>Click through the model from input to action output</h3>
+                </div>
+                <p class="vector-map-note">The network keeps temporal context, pools the last valid token, and predicts the next normalized action.</p>
+              </div>
+
+              <div class="transformer-flow" id="transformer-flow"></div>
+
+              <div class="transformer-stats">
+                <div class="transformer-stat">
+                  <span class="metric-label">Context length</span>
+                  <strong>16 steps</strong>
+                </div>
+                <div class="transformer-stat">
+                  <span class="metric-label">Model width</span>
+                  <strong>256 hidden dims</strong>
+                </div>
+                <div class="transformer-stat">
+                  <span class="metric-label">Encoder depth</span>
+                  <strong>4 layers</strong>
+                </div>
+                <div class="transformer-stat">
+                  <span class="metric-label">Action output</span>
+                  <strong>12 dimensions</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="card transformer-detail-card">
+              <div class="vector-detail-topline">
+                <p class="mono-label" id="transformer-stage-label">Stage 01</p>
+                <span class="vector-dims-pill" id="transformer-stage-shape">16 x 44</span>
+              </div>
+              <h3 id="transformer-title">Input state sequence</h3>
+              <p id="transformer-summary">
+                The model receives a padded sequence of 16 time steps, each carrying the full 44-dimensional state vector.
+              </p>
+              <div class="vector-detail-grid">
+                <div>
+                  <p class="detail-label">Operation</p>
+                  <p id="transformer-operation"></p>
+                </div>
+                <div>
+                  <p class="detail-label">Purpose</p>
+                  <p id="transformer-purpose"></p>
+                </div>
+              </div>
+              <div class="transformer-spotlight" id="transformer-spotlight">
+                <div class="spotlight-bars">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="spotlight-copy">
+                  <p class="detail-label">Implementation notes</p>
+                  <p id="transformer-notes"></p>
+                </div>
+              </div>
+            </article>
+          </div>
         </section>
 
         <section class="section results-section">
@@ -304,10 +405,10 @@
           </div>
         </section>
 
-        <section id="video" class="section">
+        <!-- <section id="video" class="section">
           <div class="section-heading">
             <p class="section-kicker">Project Briefing</p>
-            <h2>A short embedded briefing video introduces the approach before the final demo is added.</h2>
+            <h2>This short briefing video introduces the approach.</h2>
           </div>
 
           <div class="video-shell card">
@@ -320,10 +421,15 @@
             <div class="embed-note">
               <p class="mono-label">Current Clip</p>
               <p>
-                This embedded `.mov` serves as a project briefing. You can later swap in a
-                longer task demonstration or add a second video showing the full cabinet-opening run.
+                This video is the project briefing we submitted.
               </p>
             </div>
+          </div>
+        </section> -->
+
+        <section class="section ambient-outro" aria-hidden="true">
+          <div class="ambient-outro-copy">
+            <p class="section-kicker">Demo Atmosphere</p>
           </div>
         </section>
       </main>
