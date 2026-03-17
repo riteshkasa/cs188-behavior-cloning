@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Object-Aware Robotic Manipulation</title>
+    <meta
+      name="description"
+      content="A visual summary of a behavior cloning project for cabinet opening with object-aware robot state representations."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <span class="eyebrow">CS188 Final Project</span>
+          <a href="#video" class="ghost-link">Jump to Demo</a>
+        </nav>
+
+        <div class="hero-grid">
+          <section class="hero-copy">
+            <p class="kicker">Object-Aware Robotic Manipulation</p>
+            <h1>Opening kitchen cabinets using Behaviour Cloning techniques</h1>
+            <p class="lede">
+              In this project, the goal was to help a robot open kitchen cabinets by 
+              giving behavior cloning better spatial context. To do so, we used the 
+              RoboCasa365 benchmark to train a cabinet-opening policy, then improved 
+              results by replacing a robot-only internal state with a richer 
+              object-aware representation.
+            </p>
+            <div class="hero-actions">
+              <a href="#summary" class="button button-primary">Explore the Project</a>
+              <a href="#state-explorer" class="button button-secondary">Inspect the 44D State</a>
+            </div>
+          </section>
+
+          <section class="hero-visual card">
+            <div class="metric-row">
+              <div>
+                <span class="metric-label">Task</span>
+                <strong>Open a cabinet door</strong>
+              </div>
+              <div>
+                <span class="metric-label">Policy</span>
+                <strong>Behavior cloning</strong>
+              </div>
+            </div>
+
+            <div class="hero-gallery" aria-label="Project image gallery">
+              <figure class="gallery-card gallery-card-tall">
+                <img
+                  src="images/OpenCabinetTitle.png"
+                  alt="Project title slide showing the object-aware robotic manipulation presentation"
+                />
+              </figure>
+              <figure class="gallery-card gallery-card-wide">
+                <img
+                  src="images/OpenCabinetSlide.png"
+                  alt="Project slide summarizing the cabinet-opening behavior cloning setup"
+                />
+              </figure>
+            </div>
+
+            <!-- <p class="card-note">
+              The hero now uses the actual project slides so visitors immediately see the cabinet task and the training setup before diving into the object-aware state details below.
+            </p> -->
+          </section>
+        </div>
+      </header>
+
+      <main>
+        <section id="summary" class="section">
+          <div class="section-heading">
+            <p class="section-kicker">Why This Matters</p>
+            <h2>Household manipulation works better when a policy can "see" the objects that define the task.</h2>
+          </div>
+
+          <div class="summary-grid">
+            <article class="card">
+              <h3>Challenge</h3>
+              <p>
+                Cabinet opening is deceptively hard: a policy must align the end-effector
+                with a small handle, move with contact-aware precision, and pull along the
+                correct trajectory.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Benchmark</h3>
+              <p>
+                This project uses RoboCasa365, a simulation benchmark for everyday household
+                tasks, making the setup realistic enough to study spatial reasoning in manipulation.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Method</h3>
+              <p>
+                The team applies imitation learning through behavior cloning, training the
+                robot directly from expert demonstrations collected in simulation.
+              </p>
+            </article>
+            <article class="card accent-card">
+              <h3>Core Insight</h3>
+              <p>
+                A policy trained only on internal robot state lacks direct awareness of the
+                object it must interact with. Injecting object geometry closes that gap.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <p class="section-kicker">Pipeline</p>
+            <h2>From demonstrations to an object-aware policy.</h2>
+          </div>
+
+          <div class="pipeline">
+            <div class="pipeline-step active" data-step="0">
+              <span>01</span>
+              <h3>Collect expert rollouts</h3>
+              <p>Use RoboCasa365 data for successful cabinet-opening trajectories.</p>
+            </div>
+            <div class="pipeline-step" data-step="1">
+              <span>02</span>
+              <h3>Reprocess observations</h3>
+              <p>Extract cabinet-handle position and robot-to-handle distance from the simulator state.</p>
+            </div>
+            <div class="pipeline-step" data-step="2">
+              <span>03</span>
+              <h3>Expand the state vector</h3>
+              <p>Move from a basic robot-centric input to a 44-dimensional object-aware representation.</p>
+            </div>
+            <div class="pipeline-step" data-step="3">
+              <span>04</span>
+              <h3>Train and evaluate</h3>
+              <p>Measure whether richer state information improves cabinet-opening behavior.</p>
+            </div>
+          </div>
+
+          <div class="pipeline-panel card" id="pipeline-panel">
+            <p class="pipeline-label">Step 01</p>
+            <h3>Collect expert rollouts</h3>
+            <p>
+              Behavior cloning depends on the quality of demonstrations. In this project,
+              the demonstrations come from successful task executions inside the RoboCasa365 environment.
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <p class="section-kicker">Feature Extraction</p>
+            <h2>Extracting geometric features via simulator replay.</h2>
+          </div>
+
+          <article class="card replay-card">
+            <div class="replay-copy">
+              <p class="mono-label">Simulator Replay</p>
+              <h3>Recovering task geometry from existing trajectories</h3>
+              <p>
+                Instead of recollecting data from scratch, this project replays simulator
+                states from the RoboCasa365 demonstrations and queries the environment for
+                the geometric information that matters most for cabinet opening.
+              </p>
+              <p>
+                This replay step makes it possible to extract handle position, object
+                location, and robot-to-handle distance, then append those features to the
+                policy input. That is the bridge from a robot-only observation to the final
+                object-aware 44-dimensional state.
+              </p>
+            </div>
+
+            <figure class="replay-figure">
+              <img
+                src="images/SimulatorStateReplay.png"
+                alt="Slide showing how simulator replay is used to extract geometric features from cabinet-opening trajectories"
+                class="replay-image"
+              />
+            </figure>
+          </article>
+        </section>
+
+        <section id="state-explorer" class="section">
+          <div class="section-heading">
+            <p class="section-kicker">Interactive State Explorer</p>
+            <h2>See how the representation changes when the robot gains object awareness.</h2>
+          </div>
+
+          <div class="explorer-grid">
+            <article class="card comparison-card">
+              <div class="toggle-group" role="tablist" aria-label="State representation comparison">
+                <button class="toggle active" data-mode="robot-only" role="tab" aria-selected="true">Robot-only</button>
+                <button class="toggle" data-mode="object-aware" role="tab" aria-selected="false">Object-aware</button>
+              </div>
+
+              <div class="mode-panel active" id="robot-only-panel">
+                <h3>Robot-only state</h3>
+                <p>
+                  Contains internal robot information like joint positions, velocities, and
+                  controller state, but lacks explicit knowledge of the cabinet geometry.
+                </p>
+                <ul class="feature-list">
+                  <li>Good for tracking the arm itself</li>
+                  <li>Weak on target localization</li>
+                  <li>Must infer handle position indirectly</li>
+                </ul>
+              </div>
+
+              <div class="mode-panel" id="object-aware-panel">
+                <h3>Object-aware state</h3>
+                <p>
+                  Adds geometric task cues such as handle location and robot-to-handle distance,
+                  giving the policy direct access to the spatial facts that matter for cabinet opening.
+                </p>
+                <ul class="feature-list">
+                  <li>Includes explicit target geometry</li>
+                  <li>Improves task-relevant grounding</li>
+                  <li>Forms a 44-dimensional state vector</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="card slider-card">
+              <div class="slider-copy">
+                <p class="mono-label">Handle Alignment</p>
+                <h3>Distance to handle</h3>
+                <p>
+                  Drag the slider to simulate the robot getting closer to the cabinet handle.
+                  The object-aware state makes this quantity explicit.
+                </p>
+              </div>
+
+              <label for="distance-slider" class="visually-hidden">Distance to handle</label>
+              <input id="distance-slider" type="range" min="8" max="100" value="76" />
+
+              <div class="distance-display">
+                <span id="distance-value">76 cm</span>
+                <span id="distance-status">Searching for the handle</span>
+              </div>
+
+              <div class="distance-scene">
+                <div class="cabinet"></div>
+                <div class="handle"></div>
+                <div class="robot-arm" id="robot-arm"></div>
+              </div>
+            </article>
+          </div>
+
+          <article class="card state-image-card">
+            <div class="state-image-copy">
+              <p class="mono-label">Reference Figure</p>
+              <h3>The 44D state representation used in the project</h3>
+              <p>
+                This figure grounds the interactive explanation above in the actual project
+                artifact, showing how the richer state representation captures task-relevant geometry.
+              </p>
+            </div>
+            <img
+              src="images/44D-State.png"
+              alt="Detailed figure illustrating the 44-dimensional object-aware state representation"
+              class="state-image"
+            />
+          </article>
+        </section>
+
+        <section class="section results-section">
+          <div class="section-heading">
+            <p class="section-kicker">Takeaway</p>
+            <h2>Better task performance starts with better task representation.</h2>
+          </div>
+
+          <div class="results-grid">
+            <article class="card">
+              <p class="mono-label">Representation Shift</p>
+              <h3>From implicit reasoning to explicit geometry</h3>
+              <p>
+                Re-processing the simulation data let the team recover spatial features
+                that were already latent in the environment but missing from the policy input.
+              </p>
+            </article>
+            <article class="card">
+              <p class="mono-label">Practical Impact</p>
+              <h3>More reliable household manipulation</h3>
+              <p>
+                When the policy knows where the handle is and how far away it is, the
+                cabinet-opening task becomes easier to ground in the physics of the scene.
+              </p>
+            </article>
+            <article class="card">
+              <p class="mono-label">Broader Lesson</p>
+              <h3>State design matters as much as model choice</h3>
+              <p>
+                The project highlights a classic robotics lesson: learning algorithms only
+                perform as well as the information we expose to them.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="video" class="section">
+          <div class="section-heading">
+            <p class="section-kicker">Project Briefing</p>
+            <h2>A short embedded briefing video introduces the approach before the final demo is added.</h2>
+          </div>
+
+          <div class="video-shell card">
+            <div class="video-placeholder video-embed">
+              <video controls playsinline preload="metadata" class="briefing-video">
+                <source src="images/final_project_briefing_188.mp4" type="video/mp4" />
+                Your browser does not support embedded video playback.
+              </video>
+            </div>
+            <div class="embed-note">
+              <p class="mono-label">Current Clip</p>
+              <p>
+                This embedded `.mov` serves as a project briefing. You can later swap in a
+                longer task demonstration or add a second video showing the full cabinet-opening run.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
