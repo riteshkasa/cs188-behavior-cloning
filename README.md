@@ -10,9 +10,9 @@ The site presents a visually engaging overview of a behavior cloning approach fo
 - Interactive sections that explain the training pipeline and the importance of handle-aware spatial features
 - A placeholder section for a future demo video
 
-## Run locally
+## Visit Website via Github Pages
 
-Because this is a plain static website, there is no build step.
+https://riteshkasa.github.io/cs188-behavior-cloning/#demo-view
 
 ### Option 1: Open directly
 
